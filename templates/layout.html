@@ -1,19 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         {% if title %}
-            fast api - {{ title }}
+            FastAPI Blog - {{ title }}
         {% else %}
-            Home
+            FastAPI Blog
         {% endif %}
     </title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom styling to ensure smooth rendering and custom fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
+    
+    <!-- Navigation included here -->
     {% include "navigation.html" %}
-    {% block content %}   
-    {% endblock content %}
+
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        {% block content %}   
+        {% endblock content %}
+    </main>
+
+    {% include "footer.html" %}
+
 </body>
 </html>

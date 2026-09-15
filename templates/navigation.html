@@ -1,6 +1,29 @@
 {% block navigation %}
-<div>
-    <a href="{{ url_for('home') }}">Home</a>
-    <a href="{{ url_for('posts') }}">Posts</a>
-</div>
+<header class="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <div class="container mx-auto px-4 max-w-4xl h-16 flex items-center justify-between">
+        <!-- Logo / Brand Signature -->
+        <a href="{{ url_for('home') }}" class="flex items-center gap-2 group">
+            <svg class="h-6 w-6 text-blue-600 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
+            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                FastAPI Blog
+            </span>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="flex items-center gap-6">
+            <a href="{{ url_for('home') }}" class="text-slate-600 hover:text-blue-600 font-medium text-sm transition-colors relative py-1 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-blue-600 after:transition-all after:duration-200">
+                Home
+            </a>
+            <a href="{{ url_for('posts') }}" class="text-slate-600 hover:text-blue-600 font-medium text-sm transition-colors relative py-1 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-blue-600 after:transition-all after:duration-200">
+                Posts
+            </a>
+            <a href="/docs" class="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 hover:shadow transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                API Docs
+            </a>
+        </nav>
+    </div>
+</header>
 {% endblock navigation %}
