@@ -1,14 +1,13 @@
 {% extends "layout.html" %}
 {% block content %}
-    {% for post in posts %}
-        <article>
-            <div>
-                <img src="{{ url_for('static', path='images/default-avatar.png') }}" alt="{{ post['author'] }}" width="50">
-                <h2>{{ post['title'] }}</h2>
-                <p>{{ post['content'] }}</p>
-                <p><a href="{{ url_for('get_posts_by_author', author=post['author']) }}">Author: {{ post['author'] }}</a></p>
-                <p>{{ post['date_posted'] }}</p>
-            </div>
-        </article>
-    {% endfor %}
+
+    <article>
+        <div>
+            <img src="{{ post.author.image_path }}" alt="{{ post.author.username }}" width="50">
+            <h2><a href="{{ url_for('get_post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            <p>{{ post.content }}</p>
+            <p>{{ post.date_posted.strftime("%Y-%m-%d") }}</p>
+        </div>
+    </article>
+
 {% endblock content %}
