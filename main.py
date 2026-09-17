@@ -3,8 +3,9 @@ from typing import Annotated
 from contextlib import asynccontextmanager
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
 
-from fastapi import FastAPI, Request, HTTPException, status, Depends
+from fastapi import FastAPI, Request, HTTPException, status, Depends, Form
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import RedirectResponse
 
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -15,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import models
-from database import Base, engine, get_db
+from database import Base, engine, get_db, AsyncSessionLocal
 from schemas import PostCreate, PostResponse, PostUpdate, UserResponse, UserCreate, UserUpdate
 
 @asynccontextmanager
@@ -27,6 +28,22 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+@app.middleware("http")
+async def add_current_user_to_state(request: Request, call_next):
+    user_id = request.cookies.get("user_id")
+    request.state.user = None
+    if user_id:
+        try:
+            user_id_int = int(user_id)
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(select(models.User).where(models.User.id == user_id_int))
+                user = result.scalars().first()
+                if user:
+                    request.state.user = user
+        except Exception:
+            pass
+    response = await call_next(request)
+    return response
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory="media"), name="media")
@@ -105,6 +122,93 @@ async def get_user_posts_page(
         "user_posts.html",
         {"posts": posts, "user": user, "title": f"{user.username}'s Posts"}
     )
+
+
+@app.get("/login", include_in_schema=False, name="login")
+async def login_get(request: Request):
+    if request.state.user:
+        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    return templates.TemplateResponse(request, "login.html", {"title": "Log In", "active_tab": "login"})
+
+
+@app.post("/login", include_in_schema=False)
+async def login_post(
+    request: Request,
+    username: str = Form(...),
+    db: Annotated[AsyncSession, Depends(get_db)] = None
+):
+    username_clean = username.strip()
+    result = await db.execute(select(models.User).where(models.User.username == username_clean))
+    user = result.scalars().first()
+    if not user:
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {
+                "title": "Log In",
+                "error": f"User '{username_clean}' does not exist. Toggle below to Register instead!",
+                "active_tab": "login",
+                "username": username
+            }
+        )
+    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    response.set_cookie("user_id", str(user.id), httponly=True, max_age=86400)
+    return response
+
+
+@app.post("/register", include_in_schema=False)
+async def register_post(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    db: Annotated[AsyncSession, Depends(get_db)] = None
+):
+    username_clean = username.strip()
+    email_clean = email.strip()
+    
+    result = await db.execute(select(models.User).where(models.User.username == username_clean))
+    if result.scalars().first():
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {
+                "title": "Log In",
+                "error": "Username already exists. Please choose another.",
+                "active_tab": "register",
+                "username": username,
+                "email": email
+            }
+        )
+        
+    result = await db.execute(select(models.User).where(models.User.email == email_clean))
+    if result.scalars().first():
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {
+                "title": "Log In",
+                "error": "Email already exists. Please choose another.",
+                "active_tab": "register",
+                "username": username,
+                "email": email
+            }
+        )
+    
+    new_user = models.User(username=username_clean, email=email_clean)
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    response.set_cookie("user_id", str(new_user.id), httponly=True, max_age=86400)
+    return response
+
+
+@app.get("/logout", include_in_schema=False, name="logout")
+async def logout(request: Request):
+    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    response.delete_cookie("user_id")
+    return response
 
 
 @app.post(
